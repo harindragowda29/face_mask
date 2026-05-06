@@ -1,4 +1,3 @@
-```python
 import streamlit as st
 
 st.title("🤖 Face Mask Detection Chatbot")
@@ -49,4 +48,4 @@ for role, msg in st.session_state.messages:
         st.chat_message("user").write(msg)
     else:
         st.chat_message("assistant").write(msg)
-```
+
