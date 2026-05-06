@@ -1,122 +1,159 @@
 ```python
 import streamlit as st
-import numpy as np
-import cv2
-from PIL import Image
-from tensorflow.keras.models import load_model
 
-# ----------------------------
-# Load Model
-# ----------------------------
-@st.cache_resource
-def load_cnn_model():
-    return load_model("mask_detector.h5")
+st.set_page_config(page_title="Face Mask Detection Bot")
 
-model = load_cnn_model()
+st.title("🤖 Face Mask Detection Project Bot")
 
-# ----------------------------
-# App Title
-# ----------------------------
-st.title("😷 Face Mask Detection App")
-st.write("Upload an image or use webcam to detect mask")
+st.write("Ask me about the project 👇")
 
-# ----------------------------
-# Sidebar Options
-# ----------------------------
-option = st.sidebar.selectbox(
-    "Choose Input Method",
-    ("Upload Image", "Use Webcam")
+# Sidebar menu (like chatbot options)
+option = st.sidebar.radio(
+    "Choose Topic",
+    [
+        "Project Overview",
+        "Problem Statement",
+        "Objectives",
+        "System Architecture",
+        "Tools & Technologies",
+        "Data Understanding",
+        "Preprocessing",
+        "Model Building",
+        "Model Evaluation",
+        "Deployment",
+        "Limitations",
+        "Future Enhancements"
+    ]
 )
 
-# ----------------------------
-# Image Preprocessing
-# ----------------------------
-def preprocess_image(img):
-    img = cv2.resize(img, (128, 128))
-    img = img / 255.0
-    img = np.reshape(img, (1, 128, 128, 3))
-    return img
+# -----------------------------
+# Bot Responses
+# -----------------------------
 
-# ----------------------------
-# Prediction Function
-# ----------------------------
-def predict_mask(img):
-    processed = preprocess_image(img)
-    pred = model.predict(processed)[0][0]
+if option == "Project Overview":
+    st.success("📌 Project Overview")
+    st.write("""
+The Face Mask Detection system is a deep learning-based application designed to automatically detect whether a person is wearing a face mask or not.
 
-    if pred > 0.5:
-        return "No Mask", pred
-    else:
-        return "Mask", 1 - pred
+It uses Convolutional Neural Networks (CNN) and MobileNetV2, a lightweight and efficient model for image classification.
 
-# ----------------------------
-# Face Detection
-# ----------------------------
-face_cascade = cv2.CascadeClassifier(
-    cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-)
+This system is useful in public health monitoring, surveillance systems, and access control during pandemic situations.
+""")
 
-def detect_and_predict(image):
-    img = np.array(image)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+elif option == "Problem Statement":
+    st.warning("⚠ Problem Statement")
+    st.write("""
+Manual monitoring of mask usage in crowded places is difficult and error-prone.
 
-    faces = face_cascade.detectMultiScale(gray, 1.3, 5)
+This project solves this by building an automated system that detects mask and no-mask faces using CNN and MobileNetV2.
+""")
 
-    for (x, y, w, h) in faces:
-        face = img[y:y+h, x:x+w]
-        label, confidence = predict_mask(face)
+elif option == "Objectives":
+    st.info("🎯 Objectives")
+    st.write("""
+- Build an automated mask detection system
+- Apply deep learning concepts
+- Use transfer learning with MobileNetV2
+- Improve model accuracy with preprocessing
+- Deploy as a web application using Streamlit
+""")
 
-        color = (0, 255, 0) if label == "Mask" else (0, 0, 255)
+elif option == "System Architecture":
+    st.info("🧠 System Architecture")
+    st.write("""
+1. Input Layer – Image dataset
+2. Preprocessing – Resize, normalize, augment
+3. Feature Extraction – MobileNetV2
+4. Classification – Dense layers
+5. Output – Mask / No Mask
+""")
 
-        cv2.rectangle(img, (x, y), (x+w, y+h), color, 2)
-        cv2.putText(
-            img,
-            f"{label} ({confidence:.2f})",
-            (x, y - 10),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.8,
-            color,
-            2
-        )
+elif option == "Tools & Technologies":
+    st.info("🛠 Tools & Technologies")
+    st.write("""
+- Pandas → Data handling
+- NumPy → Numerical operations
+- Scikit-learn → ML utilities
+- TensorFlow/Keras → Deep learning
+- Matplotlib & Seaborn → Visualization
+- Streamlit → Deployment
+""")
 
-    return img
+elif option == "Data Understanding":
+    st.info("📊 Data Understanding")
+    st.write("""
+Dataset contains two classes:
+- Mask
+- No Mask
 
-# ----------------------------
-# Upload Image Mode
-# ----------------------------
-if option == "Upload Image":
-    uploaded_file = st.file_uploader("Upload an image", type=["jpg", "png", "jpeg"])
+Images vary in lighting, pose, and background.
+Balanced dataset improves performance.
+""")
 
-    if uploaded_file is not None:
-        image = Image.open(uploaded_file)
-        st.image(image, caption="Uploaded Image", use_column_width=True)
+elif option == "Preprocessing":
+    st.info("⚙ Data Preprocessing")
+    st.write("""
+- Resize images (224x224)
+- Normalize pixel values (0–1)
+- Data augmentation:
+  - Rotation
+  - Flipping
+  - Zoom
 
-        if st.button("Detect Mask"):
-            result_img = detect_and_predict(image)
-            st.image(result_img, caption="Result", use_column_width=True)
+This improves accuracy and prevents overfitting.
+""")
 
-# ----------------------------
-# Webcam Mode
-# ----------------------------
-elif option == "Use Webcam":
-    st.warning("Click start and allow camera access")
+elif option == "Model Building":
+    st.info("🤖 Model Building")
+    st.write("""
+Model uses MobileNetV2 (pre-trained on ImageNet).
 
-    run = st.checkbox("Start Camera")
+Added layers:
+- Global Average Pooling
+- Dense layers
+- Output layer (Softmax)
 
-    FRAME_WINDOW = st.image([])
+Loss: Binary Crossentropy  
+Optimizer: Adam
+""")
 
-    camera = cv2.VideoCapture(0)
+elif option == "Model Evaluation":
+    st.info("📈 Model Evaluation")
+    st.write("""
+Metrics used:
+- Accuracy
+- Confusion Matrix
+- Precision & Recall
 
-    while run:
-        ret, frame = camera.read()
-        if not ret:
-            st.error("Failed to access webcam")
-            break
+These help measure model performance and errors.
+""")
 
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        result = detect_and_predict(frame)
+elif option == "Deployment":
+    st.info("🌐 Deployment")
+    st.write("""
+The model is deployed using Streamlit.
 
-        FRAME_WINDOW.image(result)
+Features:
+- Upload image
+- Real-time prediction
+- Simple user interface
+""")
 
-    camera.release()
+elif option == "Limitations":
+    st.error("⚠ Limitations")
+    st.write("""
+- Poor performance on low-quality images
+- Cannot detect improper mask usage
+- Depends on lighting conditions
+""")
+
+elif option == "Future Enhancements":
+    st.success("🚀 Future Enhancements")
+    st.write("""
+- Real-time webcam detection
+- CCTV integration
+- Mobile app deployment
+- Alert system for violations
+""")
 ```
+
