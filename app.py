@@ -1,7 +1,4 @@
----
 
-## ✅ Your file should START like this:
-```python
 import streamlit as st
 
 st.set_page_config(page_title="Face Mask Detection Bot")
