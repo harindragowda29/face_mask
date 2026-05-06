@@ -1,51 +1,105 @@
 import streamlit as st
+import numpy as np
+import cv2
+from PIL import Image
+from tensorflow.keras.models import load_model
 
-st.title("🤖 Face Mask Detection Chatbot")
+# ----------------------------
+# Load Model
+# ----------------------------
+model = load_model("mask_detector.h5")
 
-# Store chat history
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+# ----------------------------
+# Page Config
+# ----------------------------
+st.set_page_config(page_title="Face Mask Detection", layout="wide")
 
-# Function to generate reply
-def get_response(user_input):
-    user_input = user_input.lower()
+st.title("😷 Face Mask Detection + Chatbot")
 
-    if "overview" in user_input:
-        return "This project detects whether a person is wearing a face mask using CNN and MobileNetV2."
+# ----------------------------
+# Tabs
+# ----------------------------
+tab1, tab2 = st.tabs(["🖼 Detection", "🤖 Chatbot"])
 
-    elif "problem" in user_input:
-        return "Manual monitoring of masks is difficult. This system automates mask detection."
+# =====================================================
+# TAB 1 → MASK DETECTION
+# =====================================================
+with tab1:
 
-    elif "objective" in user_input:
-        return "Objectives include building a mask detection system, using deep learning, and deploying via Streamlit."
+    st.header("Upload Image")
 
-    elif "architecture" in user_input:
-        return "Architecture includes Input → Preprocessing → MobileNetV2 → Dense Layers → Output."
+    uploaded_file = st.file_uploader("Upload Image", type=["jpg", "png", "jpeg"])
 
-    elif "tools" in user_input:
-        return "Tools used: Pandas, NumPy, Scikit-learn, TensorFlow, Streamlit."
+    def predict(img):
+        img = cv2.resize(img, (128,128))
+        img = img / 255.0
+        img = np.reshape(img, (1,128,128,3))
 
-    elif "evaluation" in user_input:
-        return "Model is evaluated using Accuracy, Confusion Matrix, Precision, and Recall."
+        pred = model.predict(img)[0][0]
 
-    elif "deployment" in user_input:
-        return "The model is deployed using Streamlit for easy web access."
+        if pred > 0.5:
+            return "No Mask", pred
+        else:
+            return "Mask", 1 - pred
 
-    else:
-        return "Sorry, I didn’t understand. Try asking about overview, objectives, or model."
+    if uploaded_file:
+        image = Image.open(uploaded_file)
+        st.image(image, width=300)
 
-# Chat input
-user_input = st.chat_input("Ask something about the project...")
+        img = np.array(image)
 
-if user_input:
-    st.session_state.messages.append(("user", user_input))
-    response = get_response(user_input)
-    st.session_state.messages.append(("bot", response))
+        label, confidence = predict(img)
 
-# Display chat
-for role, msg in st.session_state.messages:
-    if role == "user":
-        st.chat_message("user").write(msg)
-    else:
-        st.chat_message("assistant").write(msg)
+        if label == "Mask":
+            st.success(f"✅ Wearing Mask")
+        else:
+            st.error(f"❌ No Mask")
 
+        st.subheader("📊 Confidence Level")
+        st.progress(int(confidence * 100))
+
+        st.write(f"Confidence: {confidence*100:.2f}%")
+
+# =====================================================
+# TAB 2 → CHATBOT
+# =====================================================
+with tab2:
+
+    st.header("🤖 Project Chatbot")
+
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    def get_response(user_input):
+        user_input = user_input.lower()
+
+        if "overview" in user_input:
+            return "Face Mask Detection system uses CNN and MobileNetV2 to detect masks."
+
+        elif "problem" in user_input:
+            return "Manual monitoring is difficult, so we automate mask detection."
+
+        elif "objective" in user_input:
+            return "Build model, apply deep learning, deploy with Streamlit."
+
+        elif "tools" in user_input:
+            return "Pandas, NumPy, TensorFlow, OpenCV, Streamlit."
+
+        elif "accuracy" in user_input:
+            return "Model evaluated using accuracy, precision, recall."
+
+        else:
+            return "Ask about overview, problem, objectives, tools, or model."
+
+    user_input = st.chat_input("Ask about project...")
+
+    if user_input:
+        st.session_state.messages.append(("user", user_input))
+        response = get_response(user_input)
+        st.session_state.messages.append(("bot", response))
+
+    for role, msg in st.session_state.messages:
+        if role == "user":
+            st.chat_message("user").write(msg)
+        else:
+            st.chat_message("assistant").write(msg)
